@@ -1,15 +1,15 @@
 ---
-title: Installing and deploying a smart contract with code
+title: Install and deploy a smart contract with code
 hide_table_of_contents: true
 draft: true
 ---
 
 <head>
-  <title>Installing and deploying a smart contract with code</title>
+  <title>Install and deploy a smart contract with code</title>
   <meta charSet="utf-8" />
   <meta
     property="og:title"
-    content="Installing and deploying a smart contract with code"
+    content="Install and deploy a smart contract with code"
   />
   <meta
     property="og:description"
@@ -17,12 +17,15 @@ draft: true
   />
 </head>
 
+This guide will walk you through the process of installing and deploying a smart contract using [js-stellar-sdk](https://github.com/stellar/js-stellar-sdk). We will cover the setup of a sample Rust contract, creating a Node.js project to manage the deployment, and finally, installing the wasm of the contract and deploying it to the network
+
 # Prerequisites
 
 Before you begin, ensure you have the following installed:
 
-1. Rust and Cargo (for compiling smart contracts)
-2. Node.js and npm (for running JavaScript deployment scripts)
+1. [Rust](https://www.rust-lang.org/) and Cargo (for compiling smart contracts)
+2. [Node.js](https://nodejs.org/en) and npm (for running JavaScript deployment scripts)
+3. [Soroban CLI](../../getting-started/setup.mdx#install-the-soroban-cli)
 
 # Initialize a sample Rust Contract
 
@@ -55,7 +58,7 @@ import * as StellarSDK from "@stellar/stellar-sdk";
 import fs from "fs";
 ```
 
-# Installing the WASM on the network
+## Installing the WASM on the network
 
 Create a function to upload the compiled WASM file:
 
@@ -68,9 +71,9 @@ async function uploadWasm(filePath) {
 }
 ```
 
-This function reads the WASM file, retrieves account details from the server, and uploads the bytecode using a Stellar operation.
+This function reads the compiled WASM file, retrieves account details from the network, and installs the bytecode using `uploadContractWasm` Stellar operation, which when wrapped in a transaction is sent to the network.
 
-# Deploy contract
+## Deploy contract
 
 Deploy the contract by referencing the WASM hash:
 
@@ -92,9 +95,9 @@ async function deployContract(response) {
 }
 ```
 
-This function uses the WASM hash to deploy the contract, generating a contract address.
+This function uses the WASM hash to deploy the contract using the `createCustomContract` stellar operation, which when wrapped in a transaction is sent to the network, generating a contract address.
 
-# Building, Signing and Sending the Transaction
+## Building, Signing and Sending the Transaction
 
 Handle the building, signing, and sending of transactions:
 
@@ -159,4 +162,4 @@ try {
 
 Replace "Your_Secret_Key" with your actual secret key. This script initiates the upload of the WASM file and deploys the contract, resulting in a contract address where the contract is deployed.
 
-Ensure that you handle secrets and private keys securely and never expose them in your code repositories. This guide should provide you with a clear path to installing and deploying your smart contracts using Javascript code.
+This is just demo code, so ensure that you handle secrets and private keys securely in production environments and never expose them in your code repositories. This guide should provide you with a clear path to installing and deploying your smart contracts using Javascript code.
