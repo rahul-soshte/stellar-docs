@@ -28,7 +28,6 @@ soroban contract build
 
 This will generate a wasm file
 
-
 # Create a Node Project
 
 ```bash
@@ -40,10 +39,9 @@ npm install fs
 # Imports
 
 ```javascript
-import * as StellarSDK from '@stellar/stellar-sdk';
-import fs from 'fs';
+import * as StellarSDK from "@stellar/stellar-sdk";
+import fs from "fs";
 ```
-
 
 # Installing wasm
 
@@ -51,7 +49,6 @@ import fs from 'fs';
 cd repo
 touch install-deploy.js
 ```
-
 
 ```javascript
 async function uploadWasm(filePath) {
@@ -62,7 +59,6 @@ async function uploadWasm(filePath) {
 }
 ```
 
-
 # Deploy contract
 
 ```javascript
@@ -71,15 +67,17 @@ async function deployContract(response) {
   const operation = StellarSDK.Operation.createCustomContract({
     wasmHash: response.returnValue.bytes(),
     address: StellarSDK.Address.fromString(sourceKeypair.publicKey()),
-    salt: response.hash
+    salt: response.hash,
   });
   const responseDeploy = await buildAndSendTransaction(account, operation);
-  const contractAddress = StellarSDK.StrKey.encodeContract(StellarSDK.Address.fromScAddress(
-    responseDeploy.returnValue.address()).toBuffer());
+  const contractAddress = StellarSDK.StrKey.encodeContract(
+    StellarSDK.Address.fromScAddress(
+      responseDeploy.returnValue.address(),
+    ).toBuffer(),
+  );
   console.log(contractAddress);
 }
 ```
-
 
 # Building, Signing and Sending the Transaction
 
@@ -96,26 +94,26 @@ async function buildAndSendTransaction(account, operations) {
   const tx = await server.prepareTransaction(transaction);
   tx.sign(sourceKeypair);
 
-  console.log('Submitting transaction...');
+  console.log("Submitting transaction...");
   let response = await server.sendTransaction(tx);
   const hash = response.hash;
   console.log(`Transaction hash: ${hash}`);
-  console.log('Awaiting confirmation...');
+  console.log("Awaiting confirmation...");
 
   while (true) {
     response = await server.getTransaction(hash);
     if (response.status !== "NOT_FOUND") {
       break;
     }
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   }
 
   if (response.status === "SUCCESS") {
-    console.log('Transaction successful.');
+    console.log("Transaction successful.");
     return response;
   } else {
-    console.log('Transaction failed.');
-    throw new Error('Transaction failed');
+    console.log("Transaction failed.");
+    throw new Error("Transaction failed");
   }
 }
 ```
@@ -123,9 +121,14 @@ async function buildAndSendTransaction(account, operations) {
 # Running the Script
 
 ```javascript
-const server = new StellarSDK.SorobanRpc.Server('https://soroban-testnet.stellar.org:443');
-const sourceKeypair = StellarSDK.Keypair.fromSecret('SDSANP4BT2J5IF75H53436J5A3YJ6RCX24EE5SRFUWU3SBZGXHWTWXJO');
-const wasmFilePath = '~/hello-world/target/wasm32-unknown-unknown/release/hello_world.wasm';
+const server = new StellarSDK.SorobanRpc.Server(
+  "https://soroban-testnet.stellar.org:443",
+);
+const sourceKeypair = StellarSDK.Keypair.fromSecret(
+  "SDSANP4BT2J5IF75H53436J5A3YJ6RCX24EE5SRFUWU3SBZGXHWTWXJO",
+);
+const wasmFilePath =
+  "~/hello-world/target/wasm32-unknown-unknown/release/hello_world.wasm";
 try {
   let uploadResponse = await uploadWasm(wasmFilePath);
   await deployContract(uploadResponse);
