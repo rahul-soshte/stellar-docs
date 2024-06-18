@@ -13,11 +13,18 @@ draft: true
   />
   <meta
     property="og:description"
-    content="Installing and deploying a smart contract with code"
+    content="This guide will walk you through the process of installing and deploying a smart contract using js-stellar-sdk. We will cover the setup of a sample Rust contract, creating a Node.js project to manage the deployment, and finally, installing the wasm of the contract and deploying it to the network"
   />
 </head>
 
-# Initialize a Rust contract
+# Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+1. Rust and Cargo (for compiling smart contracts)
+2. Node.js and npm (for running JavaScript deployment scripts)
+
+# Initialize a sample Rust Contract
 
 ```bash
 mkdir ~/hello-world
@@ -26,29 +33,31 @@ soroban contract init
 soroban contract build
 ```
 
-This will generate a wasm file
+This sequence of commands creates a new directory for your project, initializes a new Soroban smart contract within that directory, and builds the contract. The build generates .wasm file in the path `hello-word/target/wasm32-unknown-unknown/release/hello_world.wasm`
 
 # Create a Node Project
 
+Initialize a new Node.js project and install necessary dependencies:
+
 ```bash
-npm init
-npm install @stellar/stellar-sdk
-npm install fs
+npm init -y
+npm install @stellar/stellar-sdk fs
 ```
 
-# Imports
+# Set Up Deployment Scripts
+
+## Imports
+
+Import necessary modules in your JavaScript file:
 
 ```javascript
 import * as StellarSDK from "@stellar/stellar-sdk";
 import fs from "fs";
 ```
 
-# Installing wasm
+# Installing the WASM on the network
 
-```bash
-cd repo
-touch install-deploy.js
-```
+Create a function to upload the compiled WASM file:
 
 ```javascript
 async function uploadWasm(filePath) {
@@ -59,7 +68,11 @@ async function uploadWasm(filePath) {
 }
 ```
 
+This function reads the WASM file, retrieves account details from the server, and uploads the bytecode using a Stellar operation.
+
 # Deploy contract
+
+Deploy the contract by referencing the WASM hash:
 
 ```javascript
 async function deployContract(response) {
@@ -79,7 +92,11 @@ async function deployContract(response) {
 }
 ```
 
+This function uses the WASM hash to deploy the contract, generating a contract address.
+
 # Building, Signing and Sending the Transaction
+
+Handle the building, signing, and sending of transactions:
 
 ```javascript
 async function buildAndSendTransaction(account, operations) {
@@ -118,17 +135,20 @@ async function buildAndSendTransaction(account, operations) {
 }
 ```
 
+This function constructs a transaction, signs it, and submits it to the network, handling any necessary retries for transaction confirmation.
+
 # Running the Script
+
+Execute the deployment script:
 
 ```javascript
 const server = new StellarSDK.SorobanRpc.Server(
   "https://soroban-testnet.stellar.org:443",
 );
-const sourceKeypair = StellarSDK.Keypair.fromSecret(
-  "SDSANP4BT2J5IF75H53436J5A3YJ6RCX24EE5SRFUWU3SBZGXHWTWXJO",
-);
+const sourceKeypair = StellarSDK.Keypair.fromSecret("Your_Secret_Key");
 const wasmFilePath =
   "~/hello-world/target/wasm32-unknown-unknown/release/hello_world.wasm";
+
 try {
   let uploadResponse = await uploadWasm(wasmFilePath);
   await deployContract(uploadResponse);
@@ -137,4 +157,6 @@ try {
 }
 ```
 
-This will return a contract address, which is where the contract is deployed
+Replace "Your_Secret_Key" with your actual secret key. This script initiates the upload of the WASM file and deploys the contract, resulting in a contract address where the contract is deployed.
+
+Ensure that you handle secrets and private keys securely and never expose them in your code repositories. This guide should provide you with a clear path to installing and deploying your smart contracts using Javascript code.
