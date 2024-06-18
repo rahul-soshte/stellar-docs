@@ -3,4 +3,135 @@ title: Installing and deploying a smart contract with code
 hide_table_of_contents: true
 draft: true
 ---
- 
+
+<head>
+  <title>Installing and deploying a smart contract with code</title>
+  <meta charSet="utf-8" />
+  <meta
+    property="og:title"
+    content="Installing and deploying a smart contract with code"
+  />
+  <meta
+    property="og:description"
+    content="Installing and deploying a smart contract with code"
+  />
+</head>
+
+# Initialize a Rust contract
+
+```bash
+mkdir ~/hello-world
+cd hello-world
+soroban contract init
+soroban contract build
+```
+
+This will generate a wasm file
+
+
+# Create a Node Project
+
+```bash
+npm init
+npm install @stellar/stellar-sdk
+npm install fs
+```
+
+# Imports
+
+```javascript
+import * as StellarSDK from '@stellar/stellar-sdk';
+import fs from 'fs';
+```
+
+
+# Installing wasm
+
+```bash
+cd repo
+touch install-deploy.js
+```
+
+
+```javascript
+async function uploadWasm(filePath) {
+  const bytecode = fs.readFileSync(filePath);
+  const account = await server.getAccount(sourceKeypair.publicKey());
+  const operation = StellarSDK.Operation.uploadContractWasm({ wasm: bytecode });
+  return await buildAndSendTransaction(account, operation);
+}
+```
+
+
+# Deploy contract
+
+```javascript
+async function deployContract(response) {
+  const account = await server.getAccount(sourceKeypair.publicKey());
+  const operation = StellarSDK.Operation.createCustomContract({
+    wasmHash: response.returnValue.bytes(),
+    address: StellarSDK.Address.fromString(sourceKeypair.publicKey()),
+    salt: response.hash
+  });
+  const responseDeploy = await buildAndSendTransaction(account, operation);
+  const contractAddress = StellarSDK.StrKey.encodeContract(StellarSDK.Address.fromScAddress(
+    responseDeploy.returnValue.address()).toBuffer());
+  console.log(contractAddress);
+}
+```
+
+
+# Building, Signing and Sending the Transaction
+
+```javascript
+async function buildAndSendTransaction(account, operations) {
+  const transaction = new StellarSDK.TransactionBuilder(account, {
+    fee: StellarSDK.BASE_FEE,
+    networkPassphrase: StellarSDK.Networks.TESTNET,
+  })
+    .addOperation(operations)
+    .setTimeout(30)
+    .build();
+
+  const tx = await server.prepareTransaction(transaction);
+  tx.sign(sourceKeypair);
+
+  console.log('Submitting transaction...');
+  let response = await server.sendTransaction(tx);
+  const hash = response.hash;
+  console.log(`Transaction hash: ${hash}`);
+  console.log('Awaiting confirmation...');
+
+  while (true) {
+    response = await server.getTransaction(hash);
+    if (response.status !== "NOT_FOUND") {
+      break;
+    }
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+
+  if (response.status === "SUCCESS") {
+    console.log('Transaction successful.');
+    return response;
+  } else {
+    console.log('Transaction failed.');
+    throw new Error('Transaction failed');
+  }
+}
+```
+
+# Running the Script
+
+```javascript
+const server = new StellarSDK.SorobanRpc.Server('https://soroban-testnet.stellar.org:443');
+const sourceKeypair = StellarSDK.Keypair.fromSecret('SDSANP4BT2J5IF75H53436J5A3YJ6RCX24EE5SRFUWU3SBZGXHWTWXJO');
+const wasmFilePath = '~/hello-world/target/wasm32-unknown-unknown/release/hello_world.wasm';
+try {
+  let uploadResponse = await uploadWasm(wasmFilePath);
+  await deployContract(uploadResponse);
+} catch (error) {
+  console.error(error);
+}
+```
+
+This will return a contract address, which is where the contract is deployed
